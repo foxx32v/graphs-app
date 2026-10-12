@@ -284,6 +284,73 @@ function App() {
 
   const selected = vertexList.find(v => v.id === selectedId) ?? null
 
+  const getGraphInfo = () => {
+    const V = vertexList.length
+    if (V === 0) return { type: 'Пустой граф', V, E: 0, C: 0, euler: 'нет', hamilton: 'нет' }
+    let E = 0
+    for (const v of vertexList)
+      for (const to of v.edge ?? [])
+        if (v.id < to) E++
+      const visited = new Set<number>()
+      const dfs = (id: number) => {
+      if (visited.has(id)) return
+      visited.add(id)
+      const v = vertexList.find(n => n.id === id)
+      for (const to of v?.edge ?? []) dfs(to)
+      }
+    let C = 0
+    for (const v of vertexList)
+      if (!visited.has(v.id)) { C++; dfs(v.id) }
+    const degrees = vertexList.map(v => (v.edge ?? []).length)
+    const leaves = degrees.filter(d => d === 1).length
+    const allDeg2 = degrees.every(d => d === 2)
+    const odd = degrees.filter(d => d % 2 === 1).length
+    let type = ''
+    if (E === 0) type = 'Только изолированные вершины'
+    else if (C > 1 && E === V - C) type = `Лес (${C} компонент)`
+    else if (C > 1) type = `Несвязный граф (${C} компонент)`
+    else if (E === V - 1 && leaves === 2) type = 'Цепь'
+    else if (E === V - 1) type = 'Дерево'
+    else if (E === V && allDeg2) type = 'Цикл (кольцо)'
+    else if (E === V) type = 'Один цикл'
+    else if (E === V * (V - 1) / 2) type = 'Полный граф'
+    else type = 'Связный граф с циклами'
+    const connected = C === 1 && E > 0
+    const euler = !connected ? 'нет'
+    : odd === 0 ? 'цикл'
+    : odd === 2 ? 'путь'
+    : 'нет'
+    let hamilton = 'нет'
+    if (V <= 12) {
+    const adj = new Map<number, number[]>()
+    for (const v of vertexList) adj.set(v.id, [...(v.edge ?? [])])
+    let pathFound = false
+    let cycleFound = false
+    const go = (id: number, start: number, seen: Set<number>) => {
+      if (pathFound && cycleFound) return
+      if (seen.size === V) {
+        pathFound = true
+        if ((adj.get(id) ?? []).includes(start)) cycleFound = true
+        return
+      }
+      for (const to of adj.get(id) ?? []) {
+        if (seen.has(to)) continue
+        seen.add(to)
+        go(to, start, seen)
+        seen.delete(to)
+        if (pathFound && cycleFound) return
+      }}
+    for (const v of vertexList) {
+      go(v.id, v.id, new Set([v.id]))
+      if (pathFound && cycleFound) break
+    }
+    hamilton = cycleFound ? 'цикл' : pathFound ? 'путь' : 'нет'
+    }
+    return { type, V, E, C, euler, hamilton }
+    //ужас какой-то что я сотварил?
+  }
+  const info = getGraphInfo()
+
   return (
     <div id='mainBox'>
       {renderMenu()}
@@ -293,13 +360,21 @@ function App() {
       >=</button>
       <div id={isClose ? 'infoBoxOpen' : 'infoBoxClose'}>
         <div>
-          <h2>Инфо:</h2>
+          <h2>Тип</h2>
+          <p>тип: {info.type}</p>
+          <p>V={info.V}, E={info.E}, C={info.C}</p>
+          <p>эйлер: {info.euler}</p>
+          <p>гамильтон: {info.hamilton}</p>
+        </div>
+        <hr/>
+        <div>
+          <h2>Инфо</h2>
           <p>координата x: {selected ? selected.x_pos.toFixed(0) : ''}</p>
           <p>координата y: {selected ? selected.y_pos.toFixed(0) : ''}</p>
           <p>количество связей: {selected ? selected.edge?.length : ''}</p>
           <p>имя вершины: {selected ? selected.title : ''}</p>
-          <p>радиус: {selected ? selected.radius ?? R : ''}</p>
-          <p>связи: {selected?.edge?.join(', ')}</p>
+          <p>радиус: {selected ? selected.radius ?? R : 'Нет'}</p>
+          <p>связи: {selected?.edge?.join(', ')|| 'Нет'}</p>
         </div>
         <hr />
         <div className='descriptionBox'>
@@ -351,7 +426,7 @@ function App() {
             type='number'
             value={R}
             placeholder='Радиус'
-            onChange={(e) => setRadius(Number(e.target.value) || 25)}
+            onChange={(e) => setRadius(Number(e.target.value) || 1)}
           />
           <button
             className={`toolbarButton${createMode ? ' toolbarButtonActive' : ''}`}

@@ -1,3 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #2d2e32;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 * {
   padding: 0;
   margin: 0;
@@ -36,7 +46,7 @@ p {
 
 h2 {
   color: rgb(230, 230, 230);
-  margin: 20px;
+  margin: 10px 10px;
 }
 
 #infoBoxOpen,
@@ -452,4 +462,9 @@ h2 {
   font-size: 14px;
   outline: none;
   max-width: 75px;
+}
+
+.graphInfo {
+  font-style: normal;
+  color: rgb(161, 160, 160);
 }
